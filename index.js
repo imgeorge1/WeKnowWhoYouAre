@@ -1,3 +1,7 @@
+let latDMS
+let lonDMS
+let openingURL
+
 fetch("http://ip-api.com/json/")
   .then(response => response.json())
   .then(data => {
@@ -53,7 +57,7 @@ const fullDeviceInfo = {
   deviceInfo: deviceInfo
 };
 
-console.log("Full Device Info (Structured):", JSON.stringify(fullDeviceInfo, null, 2));
+// console.log("Full Device Info (Structured):", JSON.stringify(fullDeviceInfo, null, 2));
 
 // Update the userDevice element with all the collected device information
 let deviceDetails = `
@@ -103,18 +107,60 @@ if (navigator.getBattery) {
 // Geolocation information
 if (navigator.geolocation) {
   navigator.geolocation.getCurrentPosition(function(position) {
-    const latitude = position.coords.latitude;
-    const longitude = position.coords.longitude;
+    const latitude1 = position.coords.latitude;
+    const longitude1 = position.coords.longitude;
     const locationInfo = `
       Your Location:<br>
-      Latitude: ${latitude}<br>
-      Longitude: ${longitude}
+      Latitude: ${latitude1}<br>
+      Longitude: ${longitude1}
     `;
     document.getElementById("userLocation").innerHTML = locationInfo;
   });
 } else {
   document.getElementById("userLocation").innerHTML = "Geolocation is not supported by this browser.";
 }
+
+// Function to convert decimal degrees to DMS format
+function convertToDMS(deg, isLatitude) {
+  const direction = isLatitude 
+    ? (deg >= 0 ? "N" : "S")  // If latitude, N for positive, S for negative
+    : (deg >= 0 ? "E" : "W"); // If longitude, E for positive, W for negative
+
+  const absDeg = Math.abs(deg);
+  const d = Math.floor(absDeg);
+  const m = Math.floor((absDeg - d) * 60);
+  const s = ((absDeg - d - m / 60) * 3600).toFixed(2);
+
+  return `${d}°${m}'${s}"${direction}`;
+}
+
+// Get geolocation and display it in DMS format
+if (navigator.geolocation) {
+  navigator.geolocation.getCurrentPosition(function(position) {
+    const lat = position.coords.latitude;
+    const lon = position.coords.longitude;
+
+    latDMS = convertToDMS(lat, true);
+    lonDMS = convertToDMS(lon, false);
+
+    document.getElementById("userLocation").innerHTML = `
+      Your Location:<br>
+      Latitude: ${latDMS}<br>
+      Longitude: ${lonDMS}
+    `;
+
+    console.log(`Latitude (DMS): ${latDMS}`);
+    console.log(`Longitude (DMS): ${lonDMS}`);
+    openingURL = `https://www.google.com/maps/place/${latDMS}+${lonDMS}/@${lat},${lon}`
+    console.log(openingURL)
+
+  });
+} else {
+  document.getElementById("userLocation").innerHTML = "Geolocation is not supported by this browser.";
+}
+document.getElementById("openMap").addEventListener("click", function () {
+  window.open(openingURL, "_blank");
+});
 
 
 document.getElementById("userDevice").innerHTML = deviceDetails;
